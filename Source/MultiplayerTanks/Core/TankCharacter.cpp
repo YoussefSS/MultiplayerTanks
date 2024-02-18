@@ -19,6 +19,8 @@ ATankCharacter::ATankCharacter()
 	CameraComponent->SetupAttachment(CameraArm, CameraArm->SocketName);
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	// GetCharacterMovement()->bUseAccelerationForPaths is set to true on the blueprint, needed for pathfinding on clients
+
 	bUseControllerRotationYaw = false;
 }
 
