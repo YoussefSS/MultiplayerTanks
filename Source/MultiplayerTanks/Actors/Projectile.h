@@ -15,6 +15,9 @@ public:
 	AProjectile();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* RootComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* ProjectileMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

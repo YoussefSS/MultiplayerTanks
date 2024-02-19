@@ -4,6 +4,8 @@
 #include "TankController.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 
+#include "MultiplayerTanks/MultiplayerTanksGameModeBase.h" // todo remove
+
 #include "DrawDebugHelpers.h"
 
 static TAutoConsoleVariable<bool> CVarDrawDebugEnabled(TEXT("mt.DrawDebug"), false, TEXT("Enable drawing debugs."));
@@ -26,6 +28,15 @@ void ATankController::Tick(float DeltaTime)
 
 		TimeSinceLastMoveUpdate += DeltaTime;
 		TimeSinceLastMoveUpdate = TimeSinceLastMoveUpdate > TimeBetweenMoveToUpdates ? 0 : TimeSinceLastMoveUpdate;
+	}
+}
+
+void ATankController::ServerTempClientAuthoritativeEliminatePlayer_Implementation(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer)
+{
+	AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
+	if (TanksGameMode)
+	{
+		TanksGameMode->EliminatePlayer(PlayerToEliminate, AttackerPlayer);
 	}
 }
 

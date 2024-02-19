@@ -7,6 +7,7 @@
 #include "TankCharacter.generated.h"
 
 class AProjectile;
+class ADamagingProjectile;
 
 UCLASS()
 class MULTIPLAYERTANKS_API ATankCharacter : public ACharacter
@@ -26,7 +27,10 @@ public:
 	USceneComponent* FireLocationComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<AProjectile> ProjectileClass;
+	TSubclassOf<AProjectile> VisualProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<ADamagingProjectile> DamagingProjectileClass;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -36,7 +40,8 @@ protected:
 
 	void FireButtonPressed();
 	void FireButtonReleased();
-	void LocalFire();
+	void FireVisualProjectile();
+	void FireDamagingProjectile();
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire();

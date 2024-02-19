@@ -19,6 +19,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(Server, Reliable)
+	void ServerTempClientAuthoritativeEliminatePlayer(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer);
+
 protected:
 	void SetupInputComponent() override;
 

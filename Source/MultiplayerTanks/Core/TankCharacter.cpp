@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MultiplayerTanks/Actors/Projectile.h"
+#include "MultiplayerTanks/Actors/DamagingProjectile.h"
 
 ATankCharacter::ATankCharacter()
 {
@@ -52,34 +53,49 @@ void ATankCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ATankCharacter::FireButtonPressed()
 {
-	// Todo add some timer
-	LocalFire();
+	// Approach:
+	// Projectiles are NOT replicated - I went with this approach to get an immediate firing response on clients even with high lag
+	// Server-rollback will be used to compensate for high lag
+	// 
+	// The client that fires the projectile will handle requesting the hit from the server
+	// The projectile on all non-local clients and the server will just be a visual representation
+
+	
+	FireDamagingProjectile();
 	ServerFire();
 }
 
 void ATankCharacter::FireButtonReleased()
 {
-
+	// Todo add some timer so tanks can't rapidly fire
 }
 
-void ATankCharacter::LocalFire()
+void ATankCharacter::FireVisualProjectile()
 {
-	// Approach:
-	// The projectile is NOT replicated
-	// The client that fires the projectile will handle requesting the hit from the server
-	// The projectile on all non-local clients and the server will just be a visual representation
-
 	UWorld* World = GetWorld();
 	if (!World)
 	{
 		return;
 	}
-	//FActorSpawnParameters SpawnParams;
-	//SpawnParams.Owner = this;
-	//SpawnParams.Instigator = this;
-	
-	AProjectile* FiredProjectile = World->SpawnActor<AProjectile>(ProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation());
 
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.Owner = this;
+
+	World->SpawnActor<AProjectile>(VisualProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
+}
+
+void ATankCharacter::FireDamagingProjectile()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.Owner = this;
+
+	World->SpawnActor<ADamagingProjectile>(DamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
 }
 
 void ATankCharacter::ServerFire_Implementation()
@@ -91,6 +107,6 @@ void ATankCharacter::MulticastFire_Implementation()
 {
 	if (!IsLocallyControlled())
 	{
-		LocalFire();
+		FireVisualProjectile();
 	}
 }

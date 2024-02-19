@@ -10,14 +10,18 @@ AProjectile::AProjectile()
 	PrimaryActorTick.bCanEverTick = true;
 	//bReplicates = true;
 
+	RootComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootComp"));
+	SetRootComponent(RootComp);
+
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
 	ProjectileMesh->SetupAttachment(GetRootComponent());
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	ProjectileCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ProjectileCollision"));
 	ProjectileCollision->SetupAttachment(GetRootComponent());
-	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
+	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	//ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
+	ProjectileCollision->SetCollisionResponseToAllChannels(ECR_Overlap);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	//ProjectileMovementComponent->SetIsReplicated(true);
@@ -36,6 +40,11 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
+
 	Destroy();
 }
 

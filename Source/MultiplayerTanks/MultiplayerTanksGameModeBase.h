@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "MultiplayerTanksGameModeBase.generated.h"
 
+class ATankController;
 /**
  * 
  */
@@ -14,4 +15,7 @@ class MULTIPLAYERTANKS_API AMultiplayerTanksGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	void EliminatePlayer(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer);
+
 };
