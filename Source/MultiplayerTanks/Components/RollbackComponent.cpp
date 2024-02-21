@@ -91,7 +91,6 @@ bool URollbackComponent::ConfirmHitAtTime(ATankCharacter* HitCharacter, const FV
 		DrawDebugPoint(GetWorld(), ProjectileHitLocation, 3.f, FColor::Blue, false, 15.f);
 	}
 
-	// Do line test
 	return bTestSuccessful;
 }
 
