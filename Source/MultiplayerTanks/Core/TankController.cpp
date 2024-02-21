@@ -3,6 +3,10 @@
 
 #include "TankController.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "MultiplayerTanks/UI/TankHUD.h"
+#include "MultiplayerTanks/Core/TankCharacter.h"
+#include "MultiplayerTanks/Components/RollbackComponent.h"
+#include "GameFramework/PlayerState.h"
 
 #include "MultiplayerTanks/MultiplayerTanksGameModeBase.h" // todo remove
 
@@ -13,6 +17,21 @@ static TAutoConsoleVariable<bool> CVarDrawDebugEnabled(TEXT("mt.DrawDebug"), fal
 ATankController::ATankController()
 {
 	bShowMouseCursor = true;
+}
+
+void ATankController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsLocalPlayerController() && HUDWidgetAsset)
+	{
+		TankHUD = CreateWidget<UTankHUD>(this, HUDWidgetAsset);
+		if (TankHUD)
+		{
+			TankHUD->AddToViewport(0);
+			TankHUD->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 
 void ATankController::Tick(float DeltaTime)
@@ -29,6 +48,11 @@ void ATankController::Tick(float DeltaTime)
 		TimeSinceLastMoveUpdate += DeltaTime;
 		TimeSinceLastMoveUpdate = TimeSinceLastMoveUpdate > TimeBetweenMoveToUpdates ? 0 : TimeSinceLastMoveUpdate;
 	}
+
+	CheckTimeSync(DeltaTime);
+	UpdateHUDTime();
+	UpdateHUDRollbackStatus();
+	UpdateHUDPing();
 }
 
 void ATankController::ServerTempClientAuthoritativeEliminatePlayer_Implementation(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer)
@@ -38,6 +62,23 @@ void ATankController::ServerTempClientAuthoritativeEliminatePlayer_Implementatio
 	{
 		TanksGameMode->EliminatePlayer(PlayerToEliminate, AttackerPlayer);
 	}
+}
+
+float ATankController::GetServerTime() const
+{
+	if (HasAuthority())
+	{
+		return GetWorld()->GetTimeSeconds();
+	}
+	else
+	{
+		return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+	}
+}
+
+float ATankController::GetSingleTripTime() const
+{
+	return SingleTripTime;
 }
 
 void ATankController::SetupInputComponent()
@@ -76,4 +117,69 @@ void ATankController::MoveToCursor()
 		
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.Location);
 	}
+}
+
+void ATankController::CheckTimeSync(float DeltaTime)
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	TimeSinceNetworkTimeSynced += DeltaTime;
+	if (TimeSinceNetworkTimeSynced >= SyncNetworkTimeFrequency)
+	{
+		ServerSyncNetworkTimeRequest(GetWorld()->GetTimeSeconds());
+		TimeSinceNetworkTimeSynced = 0.f;
+	}
+}
+
+void ATankController::ServerSyncNetworkTimeRequest_Implementation(float ClientTimeAtRequest)
+{
+	ClientSyncNetworkTimeResponse(ClientTimeAtRequest, GetWorld()->GetTimeSeconds());
+}
+
+void ATankController::ClientSyncNetworkTimeResponse_Implementation(float ClientTimeAtRequest, float ServerTimeAtResponse)
+{
+	// The time on the server is the server time reported by the server + half the time it took for that message to reach us
+	SingleTripTime = (GetWorld()->GetTimeSeconds() - ClientTimeAtRequest) * 0.5f;
+	float CurrentServerTime = ServerTimeAtResponse + SingleTripTime;
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+void ATankController::UpdateHUDTime()
+{
+	if (!IsLocalPlayerController() || !TankHUD)
+	{
+		return;
+	}
+
+	TankHUD->SetServerTime(FMath::FloorToInt(GetServerTime()));
+}
+
+void ATankController::UpdateHUDRollbackStatus()
+{
+	if (!IsLocalPlayerController() || !TankHUD || !PlayerState)
+	{
+		return;
+	}
+	
+	ATankCharacter* TankCharacter = Cast<ATankCharacter>(GetPawn());
+	if (!TankCharacter || !TankCharacter->RollbackComponent)
+	{
+		return;
+	}
+
+	bool bRollbackEnabled = (PlayerState->GetPingInMilliseconds()) < TankCharacter->RollbackComponent->GetMaxHistoryTime()*1000;
+	TankHUD->SetRollbackStatus(bRollbackEnabled);
+}
+
+void ATankController::UpdateHUDPing()
+{
+	if (!IsLocalPlayerController() || !TankHUD || !PlayerState)
+	{
+		return;
+	}
+
+	TankHUD->SetPingMS(FMath::FloorToInt(PlayerState->GetPingInMilliseconds()));
 }

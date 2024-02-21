@@ -7,6 +7,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "MultiplayerTanks/Actors/Projectile.h"
 #include "MultiplayerTanks/Actors/DamagingProjectile.h"
+#include "MultiplayerTanks/Components/RollbackComponent.h"
 
 ATankCharacter::ATankCharacter()
 {
@@ -22,6 +23,8 @@ ATankCharacter::ATankCharacter()
 
 	FireLocationComponent = CreateDefaultSubobject<USceneComponent>(TEXT("FireLocationComponent"));
 	FireLocationComponent->SetupAttachment(RootComponent);
+
+	RollbackComponent = CreateDefaultSubobject<URollbackComponent>(TEXT("RollbackComponent"));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	// Important: GetCharacterMovement()->bUseAccelerationForPaths is set to true on the blueprint, needed for pathfinding on clients

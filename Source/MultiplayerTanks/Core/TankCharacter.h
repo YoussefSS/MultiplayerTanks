@@ -8,7 +8,6 @@
 
 class AProjectile;
 class ADamagingProjectile;
-
 UCLASS()
 class MULTIPLAYERTANKS_API ATankCharacter : public ACharacter
 {
@@ -26,11 +25,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* FireLocationComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class URollbackComponent* RollbackComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AProjectile> VisualProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<ADamagingProjectile> DamagingProjectileClass;
+
+
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
