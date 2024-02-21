@@ -8,6 +8,7 @@
 #include "MultiplayerTanks/Actors/Projectile.h"
 #include "MultiplayerTanks/Actors/DamagingProjectile.h"
 #include "MultiplayerTanks/Components/RollbackComponent.h"
+#include "Navigation/PathFollowingComponent.h"
 
 ATankCharacter::ATankCharacter()
 {
@@ -36,8 +37,16 @@ void ATankCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// The pathfinding component is not correctly initialized on clients when a pawn is respawned
+	if (!HasAuthority() && GetController())
+	{
+		UPathFollowingComponent* PathFollowingComp = GetController()->FindComponentByClass<UPathFollowingComponent>();
+		if (PathFollowingComp)
+		{
+			PathFollowingComp->UpdateCachedComponents();
+		}
+	}
 }
-
 
 void ATankCharacter::Tick(float DeltaTime)
 {
