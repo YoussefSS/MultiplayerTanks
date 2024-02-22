@@ -10,13 +10,6 @@
 
 void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// Not necessarily the server, might be spawned locally
-	if (!HasAuthority())
-	{
-		Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-		return;
-	}
-
 	if (OtherActor == GetOwner())
 	{
 		return;
@@ -24,7 +17,8 @@ void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* Overlapp
 
 	ATankCharacter* OwnerCharacter = Cast<ATankCharacter>(GetOwner());
 	ATankCharacter* HitCharacter = Cast<ATankCharacter>(OtherActor);
-	if (!OwnerCharacter || !HitCharacter)
+	bool bServerOrSpawnedLocally = HasAuthority();
+	if (!OwnerCharacter || !HitCharacter || !bServerOrSpawnedLocally)
 	{ 
 		Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 		return;

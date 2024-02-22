@@ -46,7 +46,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	void FireButtonPressed();
-	void FireButtonReleased();
 	void FireVisualProjectile();
 	void FireUnreplicatedDamagingProjectile();
 

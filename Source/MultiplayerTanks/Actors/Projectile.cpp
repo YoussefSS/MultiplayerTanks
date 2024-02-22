@@ -8,7 +8,6 @@
 AProjectile::AProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	//bReplicates = true;
 
 	RootComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootComp"));
 	SetRootComponent(RootComp);
@@ -20,13 +19,11 @@ AProjectile::AProjectile()
 	ProjectileCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ProjectileCollisionSphere"));
 	ProjectileCollision->SetupAttachment(GetRootComponent());
 	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	//ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
 	ProjectileCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	ProjectileCollision->SetSphereRadius(16.f);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	//ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->InitialSpeed = 2000.f;
 	ProjectileMovementComponent->MaxSpeed = 2000.f;

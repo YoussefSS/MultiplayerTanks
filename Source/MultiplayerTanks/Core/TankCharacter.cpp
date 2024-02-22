@@ -60,7 +60,6 @@ void ATankCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATankCharacter::FireButtonPressed);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATankCharacter::FireButtonReleased);
 }
 
 
@@ -83,11 +82,6 @@ void ATankCharacter::FireButtonPressed()
 			ServerFireVisualProjectile();
 		}
 	}
-}
-
-void ATankCharacter::FireButtonReleased()
-{
-	// Todo add some timer so tanks can't rapidly fire
 }
 
 void ATankCharacter::FireVisualProjectile()

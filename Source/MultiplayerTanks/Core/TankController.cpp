@@ -11,10 +11,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 
-#include "DrawDebugHelpers.h"
-
-static TAutoConsoleVariable<bool> CVarDrawDebugEnabled(TEXT("mt.DrawDebug"), false, TEXT("Enable drawing debugs."));
-
 ATankController::ATankController()
 {
 	bShowMouseCursor = true;
@@ -145,11 +141,6 @@ void ATankController::MoveToCursor()
 
 	if (bHit)
 	{
-		if (CVarDrawDebugEnabled.GetValueOnGameThread())
-		{
-			DrawDebugSphere(GetWorld(), Hit.Location, 10, 8, FColor::Red, false, 4, (uint8)0U, 1.f);
-		}
-		
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.Location);
 	}
 }
