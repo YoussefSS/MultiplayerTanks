@@ -16,14 +16,10 @@ void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* Overlapp
 	}
 
 	ATankCharacter* OwnerCharacter = Cast<ATankCharacter>(GetOwner());
-	if (!OwnerCharacter)
-	{ 
-		return;
-	}
-
 	ATankCharacter* HitCharacter = Cast<ATankCharacter>(OtherActor);
-	if (!HitCharacter)
-	{
+	if (!OwnerCharacter || !HitCharacter)
+	{ 
+		Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 		return;
 	}
 
