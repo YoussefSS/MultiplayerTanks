@@ -3,12 +3,11 @@
 
 #include "TankHUD.h"
 #include "Components/TextBlock.h"
+#include "Styling/SlateColor.h"
 
 void UTankHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	SetRollbackStatus(true);
 }
 
 void UTankHUD::SetServerTime(int32 ServerTime)
@@ -19,12 +18,17 @@ void UTankHUD::SetServerTime(int32 ServerTime)
 	}
 }
 
-void UTankHUD::SetRollbackStatus(bool bNewRollbackEnabled)
+void UTankHUD::SetRollbackStatus(bool bNewRollbackEnabled, int32 RollbackCutoffPing)
 {
 	if (bRollbackEnabled != bNewRollbackEnabled && RollbackStatusText)
 	{
-		FText TextToDisplay = bNewRollbackEnabled ? FText::FromString("Rollback enabled") : FText::FromString("Ping too high, rollback disabled");;
+		FText TextToDisplay = bNewRollbackEnabled ?
+			FText::FromString(FString::Printf(TEXT("Ping less than %d, rollback enabled"), RollbackCutoffPing)) :
+			FText::FromString(FString::Printf(TEXT("Ping greater than %d, rollback disabled"), RollbackCutoffPing));
 		RollbackStatusText->SetText(TextToDisplay);
+
+		FColor RollbackStatusTextColor = bNewRollbackEnabled ? FColor::Green : FColor::Red;
+		RollbackStatusText->SetColorAndOpacity(FSlateColor(RollbackStatusTextColor));
 		bRollbackEnabled = bNewRollbackEnabled;
 	}
 }

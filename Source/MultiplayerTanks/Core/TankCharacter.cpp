@@ -9,6 +9,7 @@
 #include "MultiplayerTanks/Actors/DamagingProjectile.h"
 #include "MultiplayerTanks/Components/RollbackComponent.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "TankController.h"
 
 ATankCharacter::ATankCharacter()
 {
@@ -66,15 +67,22 @@ void ATankCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void ATankCharacter::FireButtonPressed()
 {
 	// Approach:
-	// Projectiles are NOT replicated - I went with this approach to get an immediate firing response on clients even with high lag
-	// Server-rollback will be used to compensate for high lag
-	// 
-	// The client that fires the projectile will handle requesting the hit from the server
-	// The projectile on all non-local clients and the server will just be a visual representation
+	// Clients within a certain ping threshold will fire a projectile locally and use server rollback to confirm the hit on the server
+	// Server and Clients with a ping higher than the threshold will have their projectile fully handled by the server
 
-	
-	FireDamagingProjectile();
-	ServerFire();
+	TankController = TankController ? TankController : Cast<ATankController>(GetController());
+	if (TankController)
+	{
+		if (TankController->GetPingTooHighForRollback() || HasAuthority())
+		{
+			ServerFireReplicatedDamagingProjectile();
+		}
+		else
+		{
+			FireUnreplicatedDamagingProjectile();
+			ServerFireVisualProjectile();
+		}
+	}
 }
 
 void ATankCharacter::FireButtonReleased()
@@ -96,7 +104,7 @@ void ATankCharacter::FireVisualProjectile()
 	World->SpawnActor<AProjectile>(VisualProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
 }
 
-void ATankCharacter::FireDamagingProjectile()
+void ATankCharacter::FireUnreplicatedDamagingProjectile()
 {
 	UWorld* World = GetWorld();
 	if (!World)
@@ -107,18 +115,32 @@ void ATankCharacter::FireDamagingProjectile()
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.Owner = this;
 
-	World->SpawnActor<ADamagingProjectile>(DamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
+	World->SpawnActor<ADamagingProjectile>(UnreplicatedDamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
 }
 
-void ATankCharacter::ServerFire_Implementation()
+void ATankCharacter::ServerFireVisualProjectile_Implementation()
 {
-	MulticastFire();
+	MulticastFireVisualProjectile();
 }
 
-void ATankCharacter::MulticastFire_Implementation()
+void ATankCharacter::MulticastFireVisualProjectile_Implementation()
 {
 	if (!IsLocallyControlled())
 	{
 		FireVisualProjectile();
 	}
+}
+
+void ATankCharacter::ServerFireReplicatedDamagingProjectile_Implementation()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.Owner = this;
+
+	World->SpawnActor<AProjectile>(ReplicatedDamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
 }

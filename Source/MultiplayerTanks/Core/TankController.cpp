@@ -9,8 +9,7 @@
 #include "GameFramework/PlayerState.h"
 #include "MultiplayerTanks/UI/ScoreBoard.h"
 #include "GameFramework/GameStateBase.h"
-
-#include "MultiplayerTanks/MultiplayerTanksGameModeBase.h" // todo remove
+#include "Net/UnrealNetwork.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -32,6 +31,11 @@ void ATankController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (HasAuthority())
+	{
+		PollPingTooHighStatus();
+	}
+
 	if (bMoveToButtonPressed)
 	{
 		if (FMath::IsNearlyZero(TimeSinceLastMoveUpdate))
@@ -45,17 +49,14 @@ void ATankController::Tick(float DeltaTime)
 
 	CheckTimeSync(DeltaTime);
 	UpdateHUDTime();
-	UpdateHUDRollbackStatus();
 	UpdateHUDPing();
 }
 
-void ATankController::ServerTempClientAuthoritativeEliminatePlayer_Implementation(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer)
+void ATankController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
-	if (TanksGameMode)
-	{
-		TanksGameMode->EliminatePlayer(PlayerToEliminate, AttackerPlayer);
-	}
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATankController, bPingTooHighForRollback);
 }
 
 float ATankController::GetServerTime() const
@@ -73,6 +74,11 @@ float ATankController::GetServerTime() const
 float ATankController::GetSingleTripTime() const
 {
 	return SingleTripTime;
+}
+
+bool ATankController::GetPingTooHighForRollback() const
+{
+	return bPingTooHighForRollback;
 }
 
 void ATankController::InitializeScoreBoard()
@@ -176,6 +182,29 @@ void ATankController::ClientSyncNetworkTimeResponse_Implementation(float ClientT
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 
+void ATankController::PollPingTooHighStatus()
+{
+	ATankCharacter* TankCharacter = Cast<ATankCharacter>(GetPawn());
+	if (TankCharacter && TankCharacter->RollbackComponent && PlayerState)
+	{
+		bPingTooHighForRollback = (PlayerState->GetPingInMilliseconds()) > TankCharacter->RollbackComponent->GetMaxHistoryTime() * 1000;
+	}
+}
+
+void ATankController::OnRep_PingTooHighForRollback()
+{
+	UpdateHUDRollbackStatus();
+}
+
+void ATankController::UpdateHUDRollbackStatus()
+{
+	ATankCharacter* TankCharacter = Cast<ATankCharacter>(GetPawn());
+	if (TankHUD && TankCharacter && TankCharacter->RollbackComponent)
+	{
+		TankHUD->SetRollbackStatus(!bPingTooHighForRollback, TankCharacter->RollbackComponent->GetMaxHistoryTime() * 1000);
+	}
+}
+
 void ATankController::InitTankHUD()
 {
 	if (IsLocalPlayerController() && !TankHUD && HUDWidgetAsset)
@@ -185,6 +214,8 @@ void ATankController::InitTankHUD()
 		{
 			TankHUD->AddToViewport(0);
 			TankHUD->SetVisibility(ESlateVisibility::Visible);
+
+			UpdateHUDRollbackStatus();
 		}
 	}
 }
@@ -197,23 +228,6 @@ void ATankController::UpdateHUDTime()
 	}
 
 	TankHUD->SetServerTime(FMath::FloorToInt(GetServerTime()));
-}
-
-void ATankController::UpdateHUDRollbackStatus()
-{
-	if (!IsLocalPlayerController() || !TankHUD || !PlayerState)
-	{
-		return;
-	}
-	
-	ATankCharacter* TankCharacter = Cast<ATankCharacter>(GetPawn());
-	if (!TankCharacter || !TankCharacter->RollbackComponent)
-	{
-		return;
-	}
-
-	bool bRollbackEnabled = (PlayerState->GetPingInMilliseconds()) < TankCharacter->RollbackComponent->GetMaxHistoryTime()*1000;
-	TankHUD->SetRollbackStatus(bRollbackEnabled);
 }
 
 void ATankController::UpdateHUDPing()

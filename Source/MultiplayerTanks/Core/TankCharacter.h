@@ -8,6 +8,8 @@
 
 class AProjectile;
 class ADamagingProjectile;
+class ATankController;
+
 UCLASS()
 class MULTIPLAYERTANKS_API ATankCharacter : public ACharacter
 {
@@ -32,9 +34,10 @@ public:
 	TSubclassOf<AProjectile> VisualProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<ADamagingProjectile> DamagingProjectileClass;
+	TSubclassOf<ADamagingProjectile> UnreplicatedDamagingProjectileClass;
 
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<ADamagingProjectile> ReplicatedDamagingProjectileClass;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -45,12 +48,17 @@ protected:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void FireVisualProjectile();
-	void FireDamagingProjectile();
+	void FireUnreplicatedDamagingProjectile();
 
 	UFUNCTION(Server, Reliable)
-	void ServerFire();
+	void ServerFireVisualProjectile();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire();
+	void MulticastFireVisualProjectile();
 	
+	UFUNCTION(Server, Reliable)
+	void ServerFireReplicatedDamagingProjectile();
+
+	UPROPERTY()
+	ATankController* TankController = nullptr;
 };

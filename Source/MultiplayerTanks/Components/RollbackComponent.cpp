@@ -151,7 +151,7 @@ bool URollbackComponent::TraceAgainstCapsule(ATankCharacter* HitCharacter, const
 		return false;
 	}
 
-	// Step 2: Check that the hit location is within the capsule
+	// Step 2: Check projectile overlaps with the capsule
 	const float CapsuleHalfHeight = HitCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float CapsuleRadius = HitCharacter->GetCapsuleComponent()->GetScaledCapsuleRadius();
 	FVector CapsuleStart = CapsuleCenter + FVector(0, 0, -CapsuleHalfHeight);

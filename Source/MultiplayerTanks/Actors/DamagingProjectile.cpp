@@ -10,6 +10,13 @@
 
 void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	// Not necessarily the server, might be spawned locally
+	if (!HasAuthority())
+	{
+		Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+		return;
+	}
+
 	if (OtherActor == GetOwner())
 	{
 		return;
@@ -28,8 +35,6 @@ void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* Overlapp
 	// If lag is above the threshold, do the check on the server without rollback - the client should lead their shots in this case
 	if (OwnerCharacter->HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Shot overlapped on server"));
-
 		AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
 		if (TanksGameMode)
 		{
@@ -38,8 +43,6 @@ void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* Overlapp
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Shot overlapped on client"));
-
 		ATankController* OwnerController = Cast<ATankController>(OwnerCharacter->GetController());
 		if (OwnerController && OwnerCharacter->RollbackComponent)
 		{

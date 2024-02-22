@@ -16,7 +16,7 @@ class MULTIPLAYERTANKS_API UTankHUD : public UUserWidget
 	
 public:
 	void SetServerTime(int32 ServerTime);
-	void SetRollbackStatus(bool bNewRollbackEnabled);
+	void SetRollbackStatus(bool bNewRollbackEnabled, int32 RollbackCutoffPing);
 	void SetPingMS(int32 NewPing);
 
 	UScoreBoard* GetScoreBoard() const;

@@ -19,15 +19,16 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(Server, Reliable)
-	void ServerTempClientAuthoritativeEliminatePlayer(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	float GetServerTime() const;
 	float GetSingleTripTime() const;
+	bool GetPingTooHighForRollback() const;
 
 	void InitializeScoreBoard();
 
 	void OnPlayerScoreUpdated(const FString& PlayerName, int32 NewScore);
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,6 +54,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "NetworkTimeSync")
 	float SyncNetworkTimeFrequency = 1.f;
 
+	void PollPingTooHighStatus();
+
+	UPROPERTY(ReplicatedUsing=OnRep_PingTooHighForRollback)
+	bool bPingTooHighForRollback = false;
+
+	UFUNCTION()
+	void OnRep_PingTooHighForRollback();
+
+	void UpdateHUDRollbackStatus();
+
 	/* HUD */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
 	TSubclassOf<UUserWidget> HUDWidgetAsset;
@@ -62,7 +73,6 @@ protected:
 
 	void InitTankHUD();
 	void UpdateHUDTime();
-	void UpdateHUDRollbackStatus();
 	void UpdateHUDPing();
 
 private:
