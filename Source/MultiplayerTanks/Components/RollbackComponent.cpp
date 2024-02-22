@@ -38,7 +38,7 @@ void URollbackComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	TrimFrameHistory();
 }
 
-void URollbackComponent::ServerScoreRequest_Implementation(ATankCharacter* HitCharacter, ATankCharacter* AttackerCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileHitLocation, float HitTime)
+void URollbackComponent::ServerScoreRequest_Implementation(ATankCharacter* HitCharacter, ATankCharacter* AttackerCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileLocationAtImpact, float ProjectileRadius, float HitTime)
 {
 	AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
 	if (!ensure(TanksGameMode) || !HitCharacter || !AttackerCharacter)
@@ -46,7 +46,7 @@ void URollbackComponent::ServerScoreRequest_Implementation(ATankCharacter* HitCh
 		return;
 	}
 
-	bool bHitConfirmed = ConfirmHitAtTime(HitCharacter, ProjectileStartLocation, ProjectileHitLocation, HitTime);
+	bool bHitConfirmed = ConfirmHitAtTime(HitCharacter, ProjectileStartLocation, ProjectileLocationAtImpact, ProjectileRadius, HitTime);
 	if (bHitConfirmed)
 	{
 		TanksGameMode->EliminatePlayer(HitCharacter, AttackerCharacter);
@@ -73,7 +73,7 @@ void URollbackComponent::DrawCapsuleAtLocation(const FVector& CapsuleLocation, F
 	);
 }
 
-bool URollbackComponent::ConfirmHitAtTime(ATankCharacter* HitCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileHitLocation, float HitTime)
+bool URollbackComponent::ConfirmHitAtTime(ATankCharacter* HitCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileLocationAtImpact, float ProjectileRadius, float HitTime)
 {
 	FVector CapsuleLocationToTest;
 	bool bValidCapsuleLocationFound = GetCapsuleLocationAtTime(HitCharacter, HitTime, CapsuleLocationToTest);
@@ -82,13 +82,13 @@ bool URollbackComponent::ConfirmHitAtTime(ATankCharacter* HitCharacter, const FV
 		return false;
 	}
 
-	bool bTestSuccessful = TraceAgainstCapsule(HitCharacter, ProjectileStartLocation, ProjectileHitLocation, CapsuleLocationToTest);
+	bool bTestSuccessful = TraceAgainstCapsule(HitCharacter, ProjectileStartLocation, ProjectileLocationAtImpact, ProjectileRadius, CapsuleLocationToTest);
 
 	if (CVarDrawDebugHitCapsule.GetValueOnGameThread())
 	{
 		FColor CapsuleColor = bTestSuccessful ? FColor::Green : FColor::Red;
 		DrawCapsuleAtLocation(CapsuleLocationToTest, CapsuleColor, 15.f);
-		DrawDebugPoint(GetWorld(), ProjectileHitLocation, 3.f, FColor::Blue, false, 15.f);
+		DrawDebugPoint(GetWorld(), ProjectileLocationAtImpact, 3.f, FColor::Blue, false, 15.f);
 	}
 
 	return bTestSuccessful;
@@ -136,7 +136,7 @@ bool URollbackComponent::GetCapsuleLocationAtTime(ATankCharacter* HitCharacter, 
 	return false;
 }
 
-bool URollbackComponent::TraceAgainstCapsule(ATankCharacter* HitCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileHitLocation, const FVector& CapsuleCenter)
+bool URollbackComponent::TraceAgainstCapsule(ATankCharacter* HitCharacter, const FVector_NetQuantize& ProjectileStartLocation, const FVector_NetQuantize& ProjectileLocationAtImpact, float ProjectileRadius, const FVector& CapsuleCenter)
 {
 	if (!HitCharacter || !HitCharacter->GetCapsuleComponent())
 	{
@@ -145,7 +145,7 @@ bool URollbackComponent::TraceAgainstCapsule(ATankCharacter* HitCharacter, const
 
 	// Step 1: Check that there are no walls in the way
 	FHitResult Hit;
-	GetWorld()->LineTraceSingleByChannel(Hit, ProjectileStartLocation, ProjectileHitLocation, ECollisionChannel::ECC_Visibility); // Pawns ignore ECC_Visibility
+	GetWorld()->LineTraceSingleByChannel(Hit, ProjectileStartLocation, ProjectileLocationAtImpact, ECollisionChannel::ECC_Visibility); // Pawns ignore ECC_Visibility
 	if (Hit.bBlockingHit)
 	{
 		return false;
@@ -157,9 +157,9 @@ bool URollbackComponent::TraceAgainstCapsule(ATankCharacter* HitCharacter, const
 	FVector CapsuleStart = CapsuleCenter + FVector(0, 0, -CapsuleHalfHeight);
 	FVector CapsuleEnd = CapsuleCenter + FVector(0, 0, CapsuleHalfHeight);
 
-	float Distance = FMath::PointDistToSegment(ProjectileHitLocation, CapsuleStart, CapsuleEnd);
+	float Distance = FMath::PointDistToSegment(ProjectileLocationAtImpact, CapsuleStart, CapsuleEnd);
 
-	return Distance <= CapsuleRadius + TraceAgainstCapsuleRadiusTolerance;
+	return Distance <= CapsuleRadius + ProjectileRadius + TraceAgainstCapsuleRadiusTolerance;
 }
 
 float URollbackComponent::GetMaxHistoryTime() const

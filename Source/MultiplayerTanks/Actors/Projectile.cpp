@@ -2,7 +2,7 @@
 
 
 #include "Projectile.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
 AProjectile::AProjectile()
@@ -17,18 +17,19 @@ AProjectile::AProjectile()
 	ProjectileMesh->SetupAttachment(GetRootComponent());
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	ProjectileCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ProjectileCollision"));
+	ProjectileCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ProjectileCollisionSphere"));
 	ProjectileCollision->SetupAttachment(GetRootComponent());
-	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	//ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
-	ProjectileCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	ProjectileCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
+	ProjectileCollision->SetSphereRadius(16.f);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	//ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
-	ProjectileMovementComponent->InitialSpeed = 1000.f;
-	ProjectileMovementComponent->MaxSpeed = 1000.f;
+	ProjectileMovementComponent->InitialSpeed = 2000.f;
+	ProjectileMovementComponent->MaxSpeed = 2000.f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0;
 }
 
@@ -37,21 +38,10 @@ void AProjectile::BeginPlay()
 	Super::BeginPlay();
 	
 	ProjectileStartLocation = GetActorLocation();
-	//ProjectileCollision->OnComponentBeginOverlap.AddDynamic(this, &AProjectile::OnProjectileBeginOverlap);
-	ProjectileCollision->OnComponentHit.AddDynamic(this, &AProjectile::OnProjectileHit); // Using Hit instead of overlap as the sweep result is more consistent
+	ProjectileCollision->OnComponentBeginOverlap.AddDynamic(this, &AProjectile::OnProjectileBeginOverlap);
 }
 
 void AProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (OtherActor == GetOwner())
-	{
-		return;
-	}
-
-	Destroy();
-}
-
-void AProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (OtherActor == GetOwner())
 	{

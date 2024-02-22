@@ -11,6 +11,7 @@ void ATankPlayerState::OnRep_Score()
 	OnPlayerScoreUpdated();
 }
 
+// OnRep_PlayerName is also called on the server whenever PlayerName is set
 void ATankPlayerState::OnRep_PlayerName()
 {
 	Super::OnRep_PlayerName();
