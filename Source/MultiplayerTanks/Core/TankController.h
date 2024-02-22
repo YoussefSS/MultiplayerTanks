@@ -25,6 +25,10 @@ public:
 	float GetServerTime() const;
 	float GetSingleTripTime() const;
 
+	void InitializeScoreBoard();
+
+	void OnPlayerScoreUpdated(const FString& PlayerName, int32 NewScore);
+
 protected:
 	virtual void BeginPlay() override;
 	void SetupInputComponent() override;
@@ -56,6 +60,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD")
 	class UTankHUD* TankHUD;
 
+	void InitTankHUD();
 	void UpdateHUDTime();
 	void UpdateHUDRollbackStatus();
 	void UpdateHUDPing();

@@ -4,17 +4,6 @@
 #include "TankHUD.h"
 #include "Components/TextBlock.h"
 
-bool UTankHUD::Initialize()
-{
-	Super::Initialize();
-
-	if (!ServerTimeText) return false;
-	if (!RollbackStatusText) return false;
-	if (!PingText) return false;
-
-	return true;
-}
-
 void UTankHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -47,5 +36,10 @@ void UTankHUD::SetPingMS(int32 NewPing)
 		PingText->SetText(FText::FromString(FString::FromInt(NewPing)));
 		CurrentPingMS = NewPing;
 	}
+}
+
+UScoreBoard* UTankHUD::GetScoreBoard() const
+{
+	return ScoreBoard;
 }
 

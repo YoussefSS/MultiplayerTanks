@@ -7,6 +7,8 @@
 #include "MultiplayerTanks/Core/TankCharacter.h"
 #include "MultiplayerTanks/Components/RollbackComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "MultiplayerTanks/UI/ScoreBoard.h"
+#include "GameFramework/GameStateBase.h"
 
 #include "MultiplayerTanks/MultiplayerTanksGameModeBase.h" // todo remove
 
@@ -23,15 +25,7 @@ void ATankController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (IsLocalPlayerController() && HUDWidgetAsset)
-	{
-		TankHUD = CreateWidget<UTankHUD>(this, HUDWidgetAsset);
-		if (TankHUD)
-		{
-			TankHUD->AddToViewport(0);
-			TankHUD->SetVisibility(ESlateVisibility::Visible);
-		}
-	}
+	InitTankHUD();
 }
 
 void ATankController::Tick(float DeltaTime)
@@ -79,6 +73,41 @@ float ATankController::GetServerTime() const
 float ATankController::GetSingleTripTime() const
 {
 	return SingleTripTime;
+}
+
+void ATankController::InitializeScoreBoard()
+{
+	if (!TankHUD || !TankHUD->GetScoreBoard() || !GetWorld())
+	{
+		return;
+	}
+
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (GameState)
+	{
+		for (APlayerState* PS : GameState->PlayerArray)
+		{
+			if (!PS)
+			{
+				continue;
+			}
+
+			TankHUD->GetScoreBoard()->InitializePlayerName(PS->GetPlayerName(), PS->GetScore());
+
+			if (PlayerState && PlayerState->GetPlayerName() == PS->GetPlayerName())
+			{
+				TankHUD->GetScoreBoard()->SetPlayerNameLocal(PS->GetPlayerName());
+			}
+		}
+	}
+}
+
+void ATankController::OnPlayerScoreUpdated(const FString& PlayerName, int32 NewScore)
+{
+	if (TankHUD && TankHUD->GetScoreBoard())
+	{
+		TankHUD->GetScoreBoard()->SetPlayerScore(PlayerName, NewScore);
+	}
 }
 
 void ATankController::SetupInputComponent()
@@ -145,6 +174,19 @@ void ATankController::ClientSyncNetworkTimeResponse_Implementation(float ClientT
 	SingleTripTime = (GetWorld()->GetTimeSeconds() - ClientTimeAtRequest) * 0.5f;
 	float CurrentServerTime = ServerTimeAtResponse + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+void ATankController::InitTankHUD()
+{
+	if (IsLocalPlayerController() && !TankHUD && HUDWidgetAsset)
+	{
+		TankHUD = CreateWidget<UTankHUD>(this, HUDWidgetAsset);
+		if (TankHUD)
+		{
+			TankHUD->AddToViewport(0);
+			TankHUD->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 
 void ATankController::UpdateHUDTime()

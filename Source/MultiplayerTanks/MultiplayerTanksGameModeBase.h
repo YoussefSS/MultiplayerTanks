@@ -17,5 +17,4 @@ class MULTIPLAYERTANKS_API AMultiplayerTanksGameModeBase : public AGameModeBase
 	
 public:
 	void EliminatePlayer(ACharacter* PlayerToEliminate, ACharacter* AttackerPlayer);
-
 };
