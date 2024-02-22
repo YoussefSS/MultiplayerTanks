@@ -21,7 +21,7 @@ AProjectile::AProjectile()
 	ProjectileCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	ProjectileCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	ProjectileCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
-	ProjectileCollision->SetSphereRadius(16.f);
+	ProjectileCollision->SetSphereRadius(18.f);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
