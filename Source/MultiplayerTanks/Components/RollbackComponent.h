@@ -12,10 +12,10 @@ struct FFramePackage
 	GENERATED_BODY()
 
 	UPROPERTY()
-	float Time;
+	float Time = 0;
 
 	UPROPERTY()
-	FVector TankLocation;
+	FVector TankLocation = FVector::ZeroVector;
 };
 
 class ATankCharacter;

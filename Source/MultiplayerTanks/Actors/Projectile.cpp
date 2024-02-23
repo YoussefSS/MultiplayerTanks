@@ -40,16 +40,20 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor == GetOwner())
-	{
-		return;
-	}
-
-	Destroy();
 }
 
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AProjectile::SetProjectileGUID(const FString& NewProjectileGuid)
+{
+	ProjectileGuid = NewProjectileGuid;
+}
+
+FString AProjectile::GetProjectileGuid() const
+{
+	return ProjectileGuid;
 }

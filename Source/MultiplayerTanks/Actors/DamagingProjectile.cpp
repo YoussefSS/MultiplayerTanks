@@ -18,33 +18,31 @@ void ADamagingProjectile::OnProjectileBeginOverlap(UPrimitiveComponent* Overlapp
 	ATankCharacter* OwnerCharacter = Cast<ATankCharacter>(GetOwner());
 	ATankCharacter* HitCharacter = Cast<ATankCharacter>(OtherActor);
 	bool bServerOrSpawnedLocally = HasAuthority();
-	if (!OwnerCharacter || !HitCharacter || !bServerOrSpawnedLocally)
+	if (OwnerCharacter && HitCharacter && bServerOrSpawnedLocally)
 	{ 
-		Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-		return;
-	}
-
-	// If this shot was fired by a server, immediately apply damage
-	// If this shot was fired by a client, do server rollback
-	// If lag is above the threshold, do the check on the server without rollback - the client should lead their shots in this case
-	if (OwnerCharacter->HasAuthority())
-	{
-		AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
-		if (TanksGameMode)
+		if (OwnerCharacter->HasAuthority())
 		{
-			TanksGameMode->EliminatePlayer(HitCharacter, OwnerCharacter);
+			// If this shot was fired by a server, immediately apply damage
+			AMultiplayerTanksGameModeBase* TanksGameMode = GetWorld()->GetAuthGameMode<AMultiplayerTanksGameModeBase>();
+			if (TanksGameMode)
+			{
+				TanksGameMode->EliminatePlayer(HitCharacter, OwnerCharacter);
+			}
 		}
-	}
-	else
-	{
-		ATankController* OwnerController = Cast<ATankController>(OwnerCharacter->GetController());
-		if (OwnerController && OwnerCharacter->RollbackComponent)
+		else
 		{
-			const float ProjectileRadius = ProjectileCollision ? ProjectileCollision->GetScaledSphereRadius() : 5.f;
-			const float HitTimeOnServer = OwnerController->GetServerTime() - OwnerController->GetSingleTripTime(); 
-			OwnerCharacter->RollbackComponent->ServerScoreRequest(HitCharacter, OwnerCharacter, ProjectileStartLocation, GetActorLocation(), ProjectileRadius, HitTimeOnServer);
+			// If this shot was fired by a client, do server rollback
+			ATankController* OwnerController = Cast<ATankController>(OwnerCharacter->GetController());
+			if (OwnerController && OwnerCharacter->RollbackComponent)
+			{
+				const float ProjectileRadius = ProjectileCollision ? ProjectileCollision->GetScaledSphereRadius() : 5.f;
+				const float HitTimeOnServer = OwnerController->GetServerTime() - OwnerController->GetSingleTripTime();
+				OwnerCharacter->RollbackComponent->ServerScoreRequest(HitCharacter, OwnerCharacter, ProjectileStartLocation, GetActorLocation(), ProjectileRadius, HitTimeOnServer);
+			}
 		}
-	}
+	}	
 
 	Super::OnProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	Destroy();
+	OnProjectileDestroyedFromOverlap.Broadcast(ProjectileGuid);
 }

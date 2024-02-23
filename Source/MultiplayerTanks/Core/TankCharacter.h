@@ -46,18 +46,32 @@ protected:
 	virtual void BeginPlay() override;
 
 	void FireButtonPressed();
-	void FireVisualProjectile();
-	void FireUnreplicatedDamagingProjectile();
+	void FireVisualProjectile(const FString& GuidString);
+	void FireUnreplicatedDamagingProjectile(const FString& GuidString);
 
 	UFUNCTION(Server, Reliable)
-	void ServerFireVisualProjectile();
+	void ServerFireVisualProjectile(const FString& GuidString);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFireVisualProjectile();
+	void MulticastFireVisualProjectile(const FString& GuidString);
 	
 	UFUNCTION(Server, Reliable)
 	void ServerFireReplicatedDamagingProjectile();
 
 	UPROPERTY()
 	ATankController* TankController = nullptr;
+
+private:
+	/* Handling the destruction of unreplicated visual projectiles */
+	UFUNCTION()
+	void OnUnreplicatedDamagingProjectileDestroyed(const FString& GuidString);
+
+	UFUNCTION(Server, Reliable)
+	void ServerDestroyVisualProjetile(const FString& GuidString);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDestroyVisualProjetile(const FString& GuidString);
+
+	// Guid : Projectile
+	TMap<FString, AProjectile*> SpawnedVisualProjectiles;
 };

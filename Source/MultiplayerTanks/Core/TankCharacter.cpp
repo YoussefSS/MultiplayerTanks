@@ -72,19 +72,20 @@ void ATankCharacter::FireButtonPressed()
 	TankController = TankController ? TankController : Cast<ATankController>(GetController());
 	if (TankController)
 	{
+		FString ProjectileGUID = FGuid::NewGuid().ToString();
 		if (TankController->GetPingTooHighForRollback() || HasAuthority())
 		{
 			ServerFireReplicatedDamagingProjectile();
 		}
 		else
 		{
-			FireUnreplicatedDamagingProjectile();
-			ServerFireVisualProjectile();
+			FireUnreplicatedDamagingProjectile(ProjectileGUID);
+			ServerFireVisualProjectile(ProjectileGUID);
 		}
 	}
 }
 
-void ATankCharacter::FireVisualProjectile()
+void ATankCharacter::FireVisualProjectile(const FString& GuidString)
 {
 	UWorld* World = GetWorld();
 	if (!World)
@@ -95,10 +96,19 @@ void ATankCharacter::FireVisualProjectile()
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.Owner = this;
 
-	World->SpawnActor<AProjectile>(VisualProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
+	AProjectile* VisualProjectile = World->SpawnActor<AProjectile>(VisualProjectileClass, 
+		FireLocationComponent->GetComponentLocation(),
+		FireLocationComponent->GetComponentRotation(), 
+		ActorSpawnParams);
+
+	if (VisualProjectile)
+	{
+		SpawnedVisualProjectiles.Add(GuidString, VisualProjectile);
+		VisualProjectile->SetProjectileGUID(GuidString);
+	}
 }
 
-void ATankCharacter::FireUnreplicatedDamagingProjectile()
+void ATankCharacter::FireUnreplicatedDamagingProjectile(const FString& GuidString)
 {
 	UWorld* World = GetWorld();
 	if (!World)
@@ -109,19 +119,51 @@ void ATankCharacter::FireUnreplicatedDamagingProjectile()
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.Owner = this;
 
-	World->SpawnActor<ADamagingProjectile>(UnreplicatedDamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
+	ADamagingProjectile* DamagingProjectile = World->SpawnActor<ADamagingProjectile>(UnreplicatedDamagingProjectileClass, 
+		FireLocationComponent->GetComponentLocation(), 
+		FireLocationComponent->GetComponentRotation(), 
+		ActorSpawnParams);
+
+	if (DamagingProjectile)
+	{
+		DamagingProjectile->SetProjectileGUID(GuidString);
+		DamagingProjectile->OnProjectileDestroyedFromOverlap.AddDynamic(this, &ATankCharacter::OnUnreplicatedDamagingProjectileDestroyed);
+	}
 }
 
-void ATankCharacter::ServerFireVisualProjectile_Implementation()
+void ATankCharacter::OnUnreplicatedDamagingProjectileDestroyed(const FString& GuidString)
 {
-	MulticastFireVisualProjectile();
+	ServerDestroyVisualProjetile(GuidString);
 }
 
-void ATankCharacter::MulticastFireVisualProjectile_Implementation()
+void ATankCharacter::ServerDestroyVisualProjetile_Implementation(const FString& GuidString)
+{
+	MulticastDestroyVisualProjetile(GuidString);
+}
+
+void ATankCharacter::MulticastDestroyVisualProjetile_Implementation(const FString& GuidString)
+{
+	if (SpawnedVisualProjectiles.Contains(GuidString))
+	{
+		if (!SpawnedVisualProjectiles[GuidString]->IsActorBeingDestroyed())
+		{
+			SpawnedVisualProjectiles[GuidString]->Destroy();
+		}
+
+		SpawnedVisualProjectiles.Remove(GuidString);
+	}
+}
+
+void ATankCharacter::ServerFireVisualProjectile_Implementation(const FString& GuidString)
+{
+	MulticastFireVisualProjectile(GuidString);
+}
+
+void ATankCharacter::MulticastFireVisualProjectile_Implementation(const FString& GuidString)
 {
 	if (!IsLocallyControlled())
 	{
-		FireVisualProjectile();
+		FireVisualProjectile(GuidString);
 	}
 }
 
@@ -136,5 +178,5 @@ void ATankCharacter::ServerFireReplicatedDamagingProjectile_Implementation()
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.Owner = this;
 
-	World->SpawnActor<AProjectile>(ReplicatedDamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
+	World->SpawnActor<ADamagingProjectile>(ReplicatedDamagingProjectileClass, FireLocationComponent->GetComponentLocation(), FireLocationComponent->GetComponentRotation(), ActorSpawnParams);
 }

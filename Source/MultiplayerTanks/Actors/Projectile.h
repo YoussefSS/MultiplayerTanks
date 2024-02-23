@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectileDestroyedFromOverlap, const FString&, DestroyedProjectileGuid);
+
 UCLASS()
 class MULTIPLAYERTANKS_API AProjectile : public AActor
 {
@@ -28,6 +30,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	
+	void SetProjectileGUID(const FString& NewProjectileGuid);
+	FString GetProjectileGuid() const;
+
+	FProjectileDestroyedFromOverlap OnProjectileDestroyedFromOverlap;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -35,4 +42,6 @@ protected:
 	virtual void OnProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	FVector_NetQuantize ProjectileStartLocation;
+
+	FString ProjectileGuid;
 };
