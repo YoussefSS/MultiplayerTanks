@@ -96,9 +96,16 @@ void ATankController::InitializeScoreBoard()
 
 			TankHUD->GetScoreBoard()->InitializePlayerName(PS->GetPlayerName(), PS->GetScore());
 
-			if (PlayerState && PlayerState->GetPlayerName() == PS->GetPlayerName())
+			if (PlayerState)
 			{
-				TankHUD->GetScoreBoard()->SetPlayerNameLocal(PS->GetPlayerName());
+				if (PlayerState->GetPlayerName() == PS->GetPlayerName())
+				{
+					TankHUD->GetScoreBoard()->SetPlayerNameLocal(PS->GetPlayerName());
+				}
+			}
+			else
+			{
+				bUpdateScoreBoardWhenPlayerStateReplicates = true;
 			}
 		}
 	}
@@ -109,6 +116,16 @@ void ATankController::OnPlayerScoreUpdated(const FString& PlayerName, int32 NewS
 	if (TankHUD && TankHUD->GetScoreBoard())
 	{
 		TankHUD->GetScoreBoard()->SetPlayerScore(PlayerName, NewScore);
+	}
+}
+
+void ATankController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	if (bUpdateScoreBoardWhenPlayerStateReplicates && TankHUD && PlayerState)
+	{
+		TankHUD->GetScoreBoard()->SetPlayerNameLocal(PlayerState->GetPlayerName());
 	}
 }
 

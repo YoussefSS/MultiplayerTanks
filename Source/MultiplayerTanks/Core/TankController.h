@@ -29,6 +29,7 @@ public:
 
 	void OnPlayerScoreUpdated(const FString& PlayerName, int32 NewScore);
 
+	virtual void OnRep_PlayerState() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -82,4 +83,6 @@ private:
 	float SingleTripTime = 0.f;
 	float ClientServerDelta = 0.f;
 	float TimeSinceNetworkTimeSynced = 0.f;
+
+	bool bUpdateScoreBoardWhenPlayerStateReplicates = false;
 };
